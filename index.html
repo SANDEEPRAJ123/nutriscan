@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriScan - Food Nutrition Scanner</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary: #FF9800;
+            --dark: #333;
+            --light: #f9f9f9;
+            --gray: #ddd;
+            --danger: #F44336;
+            --warning: #FFC107;
+            --success: #4CAF50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f5f5;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .scanner-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .camera-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #camera {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            display: block;
+            background: var(--dark);
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            animation: scan 2s linear infinite;
+            display: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .or-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .or-divider::before, .or-divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .or-divider span {
+            padding: 0 10px;
+            color: #777;
+        }
+
+        .manual-entry {
+            display: flex;
+            gap: 10px;
+        }
+
+        #food-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--gray);
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .results {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .health-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .health-excellent {
+            background-color: #E8F5E9;
+            color: var(--success);
+        }
+
+        .health-good {
+            background-color: #FFF8E1;
+            color: var(--warning);
+        }
+
+        .health-poor {
+            background-color: #FFEBEE;
+            color: var(--danger);
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            text-align: center;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .summary-card h3 {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .summary-card p {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .summary {
+                flex-direction: column;
+            }
+            
+            .summary-card {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NutriScan</h1>
+            <p>Scan your food to analyze nutritional content</p>
+        </header>
+
+        <div class="scanner-container">
+            <div class="camera-box">
+                <video id="camera" autoplay playsinline></video>
+                <div class="scan-line"></div>
+                <button id="capture-btn" class="btn">Scan Food</button>
+            </div>
+            
+            <div class="or-divider">
+                <span>OR</span>
+            </div>
+            
+            <div class="manual-entry">
+                <input type="text" id="food-input" placeholder="Enter food name">
+                <button id="search-btn" class="btn">Search</button>
+            </div>
+        </div>
+
+        <div class="results">
+            <h2>Nutritional Information</h2>
+            <div class="table-container">
+                <table id="nutrition-table">
+                    <thead>
+                        <tr>
+                            <th>Food</th>
+                            <th>Quantity</th>
+                            <th>Calories</th>
+                            <th>Protein (g)</th>
+                            <th>Carbs (g)</th>
+                            <th>Fat (g)</th>
+                            <th>Health</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Results will appear here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="summary">
+                <div class="summary-card">
+                    <h3>Total Items</h3>
+                    <p id="total-items">0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Calories</h3>
+                    <p id="total-calories">0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Protein</h3>
+                    <p id="total-protein">0g</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Note: This is a demo using the Nutritionix API. For accurate results, specify food quantities.</p>
+    </footer>
+
+    <script>
+        // Nutritionix API credentials
+        const APP_ID = '2f593845';
+        const APP_KEY = 'c5f9df89c2e799997789e988';
+        const API_URL = 'https://trackapi.nutritionix.com/v2/natural/nutrients';
+
+        // DOM Elements
+        const cameraElement = document.getElementById('camera');
+        const captureBtn = document.getElementById('capture-btn');
+        const scanLine = document.querySelector('.scan-line');
+        const foodInput = document.getElementById('food-input');
+        const searchBtn = document.getElementById('search-btn');
+        const tableBody = document.getElementById('table-body');
+        const totalItemsElement = document.getElementById('total-items');
+        const totalCaloriesElement = document.getElementById('total-calories');
+        const totalProteinElement = document.getElementById('total-protein');
+
+        // Global variables
+        let stream = null;
+        let foodItems = [];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if camera is supported
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('Camera access is not supported in your browser.');
+                return;
+            }
+
+            // Initialize camera
+            initCamera();
+            
+            // Set up event listeners
+            captureBtn.addEventListener('click', captureFood);
+            searchBtn.addEventListener('click', searchFood);
+            foodInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchFood();
+            });
+        });
+
+        // Initialize camera
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                cameraElement.srcObject = stream;
+                scanLine.style.display = 'block';
+            } catch (err) {
+                console.error('Camera error:', err);
+                alert('Could not access the camera. Please check permissions.');
+            }
+        }
+
+        // Capture food image
+        function captureFood() {
+            // In a real app, you would send this image to a food recognition API
+            // For this demo, we'll simulate the process with a prompt
+            
+            // Show loading state
+            captureBtn.disabled = true;
+            captureBtn.textContent = 'Processing...';
+            
+            // Simulate API processing delay
+            setTimeout(() => {
+                // Prompt user to describe the food (simulating image recognition)
+                const foodName = prompt("Our AI is analyzing your food...\n\nFor this demo, please enter the food name manually:");
+                
+                if (foodName) {
+                    foodInput.value = foodName;
+                    searchFood();
+                }
+                
+                // Reset button
+                captureBtn.disabled = false;
+                captureBtn.textContent = 'Scan Food';
+            }, 1500);
+        }
+
+        // Search for food nutrition data
+        async function searchFood() {
+            const query = foodInput.value.trim();
+            
+            if (!query) {
+                alert('Please enter a food item');
+                return;
+            }
+            
+            // Show loading state
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-app-id': APP_ID,
+                        'x-app-key': APP_KEY,
+                        'x-remote-user-id': '0'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        timezone: 'US/Eastern'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.foods && data.foods.length > 0) {
+                    processFoodData(data.foods[0]);
+                    foodInput.value = '';
+                } else {
+                    alert('No nutrition data found for this food.');
+                }
+            } catch (error) {
+                console.error('Error fetching nutrition data:', error);
+                alert('Error fetching nutrition data. Please try again.');
+                
+                // For demo purposes, use mock data if API fails
+                useMockData(query);
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+
+        // Process food data and add to table
+        function processFoodData(food) {
+            // Calculate health rating
+            const healthRating = calculateHealthRating(food);
+            
+            // Create food item object
+            const foodItem = {
+                name: food.food_name,
+                quantity: food.serving_qty + ' ' + food.serving_unit,
+                calories: Math.round(food.nf_calories),
+                protein: Math.round(food.nf_protein * 10) / 10,
+                carbs: Math.round(food.nf_total_carbohydrate * 10) / 10,
+                fat: Math.round(food.nf_total_fat * 10) / 10,
+                health: healthRating
+            };
+            
+            // Add to food items array
+            foodItems.push(foodItem);
+            
+            // Update table
+            updateFoodTable();
+            
+            // Update summary
+            updateSummary();
+        }
+
+        // Calculate health rating based on nutrition
+        function calculateHealthRating(food) {
+            const calories = food.nf_calories;
+            const protein = food.nf_protein;
+            const carbs = food.nf_total_carbohydrate;
+            const fat = food.nf_total_fat;
+            const sugar = food.nf_sugars || 0;
+            const fiber = food.nf_dietary_fiber || 0;
+            
+            // Simple scoring system (can be enhanced)
+            let score = 0;
+            
+            // Positive factors
+            if (protein >= 10) score += 2;
+            else if (protein >= 5) score += 1;
+            
+            if (fiber >= 5) score += 2;
+            else if (fiber >= 3) score += 1;
+            
+            // Negative factors
+            if (sugar >= 20) score -= 2;
+            else if (sugar >= 10) score -= 1;
+            
+            if (fat >= 15) score -= 1;
+            if (fat >= 25) score -= 1;
+            
+            // Determine rating
+            if (score >= 3) return { text: 'Excellent', class: 'health-excellent' };
+            if (score >= 0) return { text: 'Good', class: 'health-good' };
+            return { text: 'Poor', class: 'health-poor' };
+        }
+
+        // Update food table
+        function updateFoodTable() {
+            // Clear existing rows
+            tableBody.innerHTML = '';
+            
+            // Add each food item to the table
+            foodItems.forEach(item => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.calories}</td>
+                    <td>${item.protein}</td>
+                    <td>${item.carbs}</td>
+                    <td>${item.fat}</td>
+                    <td><span class="health-indicator ${item.health.class}">${item.health.text}</span></td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Update summary cards
+        function updateSummary() {
+            const totalItems = foodItems.length;
+            const totalCalories = foodItems.reduce((sum, item) => sum + item.calories, 0);
+            const totalProtein = foodItems.reduce((sum, item) => sum + item.protein, 0);
+            
+            totalItemsElement.textContent = totalItems;
+            totalCaloriesElement.textContent = totalCalories;
+            totalProteinElement.textContent = `${totalProtein}g`;
+        }
+
+        // Use mock data if API fails (for demo purposes)
+        function useMockData(query) {
+            const mockFoods = {
+                'apple': {
+                    food_name: 'Apple',
+                    serving_qty: 1,
+                    serving_unit: 'medium',
+                    nf_calories: 95,
+                    nf_protein: 0.5,
+                    nf_total_carbohydrate: 25,
+                    nf_total_fat: 0.3,
+                    nf_sugars: 19,
+                    nf_dietary_fiber: 4.4
+                },
+                'chicken breast': {
+                    food_name: 'Chicken Breast',
+                    serving_qty: 1,
+                    serving_unit: 'breast',
+                    nf_calories: 284,
+                    nf_protein: 53.4,
+                    nf_total_carbohydrate: 0,
+                    nf_total_fat: 6.2,
+                    nf_sugars: 0,
+                    nf_dietary_fiber: 0
+                },
+                'pizza': {
+                    food_name: 'Pizza',
+                    serving_qty: 1,
+                    serving_unit: 'slice',
+                    nf_calories: 285,
+                    nf_protein: 12.2,
+                    nf_total_carbohydrate: 35.6,
+                    nf_total_fat: 10.4,
+                    nf_sugars: 3.8,
+                    nf_dietary_fiber: 2.5
+                }
+            };
+            
+            const foodKey = query.toLowerCase();
+            const mockFood = mockFoods[foodKey] || mockFoods['apple']; // Default to apple if not found
+            
+            processFoodData(mockFood);
+            foodInput.value = '';
+        }
+    </script>
+</body>
+</html>
